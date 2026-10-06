@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>乘法拔河大對決：動態學童競技版！🪢</title>
+  <style>
+    :root {
+      --blue: #2563EB;
+      --blue-bg: #EFF6FF;
+      --blue-border: #93C5FD;
+      --red: #DC2626;
+      --red-bg: #FEF2F2;
+      --red-border: #FCA5A5;
+      --bg: #F8FAFC;
+    }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 頂部快速控制列 */
+    header {
+      height: 48px;
+      background: #FFFFFF;
+      border-bottom: 2px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #334155;
+      z-index: 10;
+    }
+    .header-btn {
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.15s;
+    }
+    .header-btn:hover { background: #E2E8F0; }
+
+    /* 主對戰三欄容器 */
+    .arena-container {
+      flex: 1;
+      display: flex;
+      width: 100%;
+      height: calc(100vh - 48px);
+    }
+
+    /* 左右兩側答題區 */
+    .player-zone {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 12px;
+      z-index: 5;
+    }
+    .zone-blue {
+      background: var(--blue-bg);
+      border-right: 3px solid var(--blue-border);
+    }
+    .zone-red {
+      background: var(--red-bg);
+      border-left: 3px solid var(--red-border);
+    }
+    .player-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .zone-blue .player-title { color: var(--blue); }
+    .zone-red .player-title { color: var(--red); }
+
+    .q-box {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #0F172A;
+      margin: 10px 0;
+      line-height: 1;
+      min-height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 290px;
+      min-height: 190px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 290px;
+    }
+    .opt-btn {
+      background: #FFFFFF;
+      border: 3px solid #CBD5E1;
+      border-radius: 18px;
+      padding: 16px 0;
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: #1E293B;
+      box-shadow: 0 4px 0 #94A3B8;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.05s;
+    }
+    .opt-btn:active {
+      transform: translateY(4px);
+      box-shadow: none;
+    }
+    .zone-blue .opt-btn { border-color: var(--blue-border); }
+    .zone-red .opt-btn { border-color: var(--red-border); }
+    .opt-btn.correct { background: #86EFAC !important; border-color: #22C55E !important; }
+    .opt-btn.wrong { background: #FECDD3 !important; border-color: #F43F5E !important; }
+    .opt-btn.locked { pointer-events: none; opacity: 0.5; }
+
+    /* =========================================
+       中間：動態拔河競技場（結合學童角色插畫）
+       ========================================= */
+    .rope-zone {
+      flex: 5.5;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .rope-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #475569;
+      text-align: center;
+    }
+
+    /* 拔河核心舞台 */
+    .stage {
+      width: 100%;
+      height: 310px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 地面跑道與刻度 */
+    .ground-line {
+      position: absolute;
+      bottom: 35px;
+      width: 92%;
+      height: 10px;
+      background: #E2E8F0;
+      border-radius: 99px;
+    }
+    .scale-ticks {
+      position: absolute;
+      top: -12px;
+      left: 0;
+      width: 100%;
+      height: 32px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .tick {
+      width: 4px;
+      height: 22px;
+      background: #CBD5E1;
+      border-radius: 2px;
+    }
+    .tick.center {
+      background: #0F172A;
+      width: 6px;
+      height: 34px;
+      top: -6px;
+      position: relative;
+    }
+    .tick.win {
+      background: #EF4444;
+      width: 6px;
+      height: 34px;
+      top: -6px;
+      position: relative;
+    }
+
+    /* 移動總平台 (整條繩子 + 兩個大人物一同位移) */
+    .battle-rig {
+      position: absolute;
+      bottom: 42px;
+      left: 50%;
+      width: 480px;
+      height: 230px;
+      transform: translateX(-50%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    /* 粗麻繩本體 */
+    .rope-mesh {
+      position: absolute;
+      bottom: 84px;
+      left: 80px;
+      right: 80px;
+      height: 16px;
+      background: repeating-linear-gradient(
+        -45deg,
+        #B45309,
+        #B45309 10px,
+        #D97706 10px,
+        #D97706 20px
+      );
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(180, 83, 9, 0.35);
+      border: 2px solid #78350F;
+      z-index: 2;
+    }
+
+    /* 左右延伸的垂下繩尾 */
+    .rope-tail-left {
+      position: absolute;
+      bottom: 25px;
+      left: 8px;
+      width: 60px;
+      height: 60px;
+      border-left: 12px solid #B45309;
+      border-bottom: 12px solid #B45309;
+      border-radius: 0 0 0 45px;
+      z-index: 1;
+    }
+    .rope-tail-right {
+      position: absolute;
+      bottom: 25px;
+      right: 8px;
+      width: 60px;
+      height: 60px;
+      border-right: 12px solid #B45309;
+      border-bottom: 12px solid #B45309;
+      border-radius: 0 0 45px 0;
+      z-index: 1;
+    }
+
+    /* 紅緞帶中心標記 */
+    .center-ribbon {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 22px;
+      height: 48px;
+      background: #EF4444;
+      border-radius: 4px;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+      z-index: 6;
+    }
+    .center-ribbon::after {
+      content: '📍';
+      position: absolute;
+      top: -26px;
+      left: -2px;
+      font-size: 1.4rem;
+    }
+
+    /* =========================================
+       學童向量造型與發力骨骼系統
+       ========================================= */
+    .char-container {
+      position: relative;
+      width: 150px;
+      height: 200px;
+      transform-origin: bottom center;
+      transition: transform 0.25s ease;
+      z-index: 4;
+    }
+
+    .char-boy {
+      /* 左側男孩朝右拉 */
+    }
+    .char-girl {
+      /* 右側女孩朝左拉 (水平鏡像朝向中央) */
+      transform: scaleX(-1);
+    }
+
+    .char-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.15));
+    }
+
+    /* 狀態氣泡特效 */
+    .bubble-tag {
+      position: absolute;
+      top: 0px;
+      font-size: 2rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+    .char-boy .bubble-tag { left: 10px; }
+    .char-girl .bubble-tag { right: 10px; transform: scaleX(-1); }
+
+    /* 動作狀態機 (CSS 類別控制) */
+    /* 1. 贏下此題：猛烈發力後傾 (PULLING) */
+    .char-boy.pulling {
+      transform: rotate(-24deg) scale(1.08);
+    }
+    .char-girl.pulling {
+      transform: scaleX(-1) rotate(-24deg) scale(1.08);
+    }
+    .pulling .bubble-tag {
+      opacity: 1;
+    }
+
+    /* 2. 輸掉此題：前撲失衡 (SLIPPING) */
+    .char-boy.slipping {
+      transform: rotate(18deg) translateX(20px);
+    }
+    .char-girl.slipping {
+      transform: scaleX(-1) rotate(18deg) translateX(20px);
+    }
+    .slipping .bubble-tag {
+      opacity: 1;
+    }
+
+    /* 3. 獲勝歡呼跳躍 (WINNING) */
+    .char-boy.winning {
+      animation: boyWinJump 0.45s infinite alternate !important;
+    }
+    .char-girl.winning {
+      animation: girlWinJump 0.45s infinite alternate !important;
+    }
+    @keyframes boyWinJump {
+      0% { transform: translateY(0) scale(1.1); }
+      100% { transform: translateY(-30px) scale(1.1); }
+    }
+    @keyframes girlWinJump {
+      0% { transform: scaleX(-1) translateY(0) scale(1.1); }
+      100% { transform: scaleX(-1) translateY(-30px) scale(1.1); }
+    }
+
+    /* 繩子受力顫動動畫 */
+    .rope-mesh.shaking {
+      animation: ropeVibrate 0.15s 2;
+    }
+    @keyframes ropeVibrate {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px) scaleY(1.15); }
+    }
+
+    /* 即時戰況狀態條 */
+    .status-badge {
+      background: #F1F5F9;
+      padding: 8px 24px;
+      border-radius: 99px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #334155;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    /* 倒數 3、2、1 與開始全螢幕特效 */
+    .countdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+      pointer-events: all;
+    }
+    .countdown-num {
+      font-size: 8rem;
+      font-weight: 900;
+      color: #FACC15;
+      text-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      animation: countPulse 0.85s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      line-height: 1;
+    }
+    .countdown-tip {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-top: 16px;
+      letter-spacing: 2px;
+    }
+    @keyframes countPulse {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* 準備開始遮罩或等待提示卡 */
+    .ready-banner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #94A3B8;
+      border: 3px dashed #CBD5E1;
+      border-radius: 20px;
+      padding: 24px 12px;
+      text-align: center;
+      grid-column: span 2;
+    }
+
+    /* 彈窗樣式 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: 28px;
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+    .btn-action {
+      background: #16A34A;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 16px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #15803D;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>🪢 乘法拔河大對決（二年級競技版）</div>
+    <div style="display:flex; gap:8px;">
+      <button class="header-btn" onclick="openSettings()">⚙️ 選擇段落</button>
+      <button class="header-btn" onclick="restartMatch()">🔄 重新開局</button>
+    </div>
+  </header>
+
+  <div class="arena-container">
+    <!-- 左側：藍隊區域（男孩大力士） -->
+    <div class="player-zone zone-blue">
+      <div class="player-title">👦 藍隊（小智）</div>
+      <div class="q-box" id="blueQ">--</div>
+      <div class="options-grid" id="blueOptions">
+        <div class="ready-banner">等待開局哨聲 🔔</div>
+      </div>
+      <div style="font-weight:800; font-size:1.15rem; color:#2563EB;">藍隊拉進：<span id="blueLead">0</span> 格</div>
+    </div>
+
+    <!-- 中間：動態超大拔河競技場（結合學童三視圖插畫） -->
+    <div class="rope-zone">
+      <div class="rope-title">🔥 誰先算對，立即往自己方向大力拔！ 🔥</div>
+
+      <div class="stage">
+        <!-- 地面刻度線 (-5 到 +5) -->
+        <div class="ground-line">
+          <div class="scale-ticks" id="scaleTicks"></div>
+        </div>
+
+        <!-- 動態拉扯主平台 (隨 ropeScore 位移) -->
+        <div class="battle-rig" id="battleRig">
+          
+          <!-- 藍隊選手：拔河姿勢男孩 (左側向右拉) -->
+          <div class="char-container char-boy" id="charBoy">
+            <span class="bubble-tag" id="bubbleBoy">🔥</span>
+            <svg class="char-svg" viewBox="0 0 160 210">
+              <!-- 雙腿蹲踞後傾 -->
+              <!-- 後腿 (左腳支撐蹬地) -->
+              <path d="M 68 128 L 46 160 L 28 178" stroke="#15803D" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- 深灰鞋底 (後腳) -->
+              <ellipse cx="24" cy="184" rx="14" ry="9" fill="#52525B"/>
+              
+              <!-- 前腿 (右腳前邁抵地) -->
+              <path d="M 82 128 L 98 162 L 126 178" stroke="#16A34A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- 深灰鞋底 (前腳) -->
+              <ellipse cx="132" cy="184" rx="15" ry="9" fill="#52525B"/>
+
+              <!-- 軀幹後傾 (黃綠條紋上衣) -->
+              <g transform="rotate(-15 75 110)">
+                <!-- 黃底衣服 -->
+                <path d="M 52 82 L 98 82 L 92 135 L 56 135 Z" fill="#FACC15"/>
+                <!-- 中間寬版綠色橫條紋 -->
+                <rect x="53" y="98" width="42" height="20" fill="#15803D"/>
+                <!-- 綠色領口裝飾三角 -->
+                <polygon points="75,82 66,95 84,95" fill="#15803D"/>
+              </g>
+
+              <!-- 手臂雙手抓繩 (向右前方用力伸出握繩) -->
+              <!-- 後手臂 -->
+              <path d="M 68 96 L 98 108 L 124 102" stroke="#EAB308" stroke-width="15" stroke-linecap="round" fill="none"/>
+              <circle cx="126" cy="102" r="9" fill="#FED7AA"/>
+              <!-- 前手臂 (疊在繩子上抓緊) -->
+              <path d="M 78 98 L 112 110 L 140 105" stroke="#FACC15" stroke-width="16" stroke-linecap="round" fill="none"/>
+              <!-- 綠色袖口滾邊 -->
+              <circle cx="112" cy="110" r="7" fill="#15803D"/>
+              <!-- 握拳小肉手 -->
+              <circle cx="140" cy="105" r="10" fill="#FDBA74"/>
+
+              <!-- 頭部：側臉咬牙發力、呆毛朝上 (依三視圖特徵) -->
+              <g transform="translate(10, 0)">
+                <!-- 臉蛋 -->
+                <circle cx="78" cy="52" r="32" fill="#FED7AA"/>
+                <!-- 棕色短髮與標誌性上翹呆毛 -->
+                <path d="M 48 48 C 48 20, 88 12, 104 36 C 104 36, 114 18, 108 8 C 100 12, 94 20, 94 20 C 80 14, 56 22, 48 48 Z" fill="#78350F"/>
+                <!-- 側鬢角與耳朵 -->
+                <path d="M 50 45 L 62 48 L 56 64 Z" fill="#78350F"/>
+                <circle cx="56" cy="56" r="8" fill="#FDBA74"/>
+                
+                <!-- 專注發力眉眼：側視堅毅眼神與咬牙咧嘴 -->
+                <path d="M 76 38 L 92 44" stroke="#451A03" stroke-width="4" stroke-linecap="round"/>
+                <ellipse cx="88" cy="48" rx="4.5" ry="6" fill="#18181B"/>
+                <!-- 腮紅 -->
+                <ellipse cx="80" cy="60" rx="7" ry="4" fill="#FB7185" opacity="0.6"/>
+                <!-- 咬牙張口 (露出白色牙齒) -->
+                <path d="M 88 64 Q 100 64 96 73 Q 86 73 88 64 Z" fill="#991B1B"/>
+                <rect x="89" y="65" width="6" height="3" fill="#FFFFFF" rx="1"/>
+              </g>
+            </svg>
+          </div>
+
+          <!-- 粗麻繩與紅緞帶 -->
+          <div class="rope-tail-left"></div>
+          <div class="rope-mesh" id="ropeMesh">
+            <div class="center-ribbon"></div>
+          </div>
+          <div class="rope-tail-right"></div>
+
+          <!-- 紅隊選手：拔河姿勢雙馬尾女孩 (鏡像朝中央拉) -->
+          <div class="char-container char-girl" id="charGirl">
+            <span class="bubble-tag" id="bubbleGirl">🔥</span>
+            <svg class="char-svg" viewBox="0 0 160 210">
+              <!-- 雙腿蹲踞後傾 -->
+              <!-- 後腿 (左腳支撐蹬地) -->
+              <path d="M 68 128 L 46 160 L 28 178" stroke="#15803D" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- 藍色球鞋 (後腳 - 依圖淺藍配深藍底) -->
+              <ellipse cx="24" cy="184" rx="14" ry="9" fill="#38BDF8"/>
+              <ellipse cx="22" cy="187" rx="12" ry="5" fill="#0284C7"/>
+              
+              <!-- 前腿 (右腳前邁抵地) -->
+              <path d="M 82 128 L 98 162 L 126 178" stroke="#16A34A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- 藍色球鞋 (前腳) -->
+              <ellipse cx="132" cy="184" rx="15" ry="9" fill="#38BDF8"/>
+              <ellipse cx="134" cy="187" rx="13" ry="5" fill="#0284C7"/>
+
+              <!-- 軀幹後傾 (黃綠條紋衛衣) -->
+              <g transform="rotate(-15 75 110)">
+                <path d="M 52 82 L 98 82 L 92 135 L 56 135 Z" fill="#FACC15"/>
+                <rect x="53" y="98" width="42" height="20" fill="#15803D"/>
+                <polygon points="75,82 66,95 84,95" fill="#15803D"/>
+              </g>
+
+              <!-- 手臂雙手抓繩 -->
+              <!-- 後手臂 -->
+              <path d="M 68 96 L 98 108 L 124 102" stroke="#EAB308" stroke-width="15" stroke-linecap="round" fill="none"/>
+              <circle cx="126" cy="102" r="9" fill="#FED7AA"/>
+              <!-- 前手臂 -->
+              <path d="M 78 98 L 112 110 L 140 105" stroke="#FACC15" stroke-width="16" stroke-linecap="round" fill="none"/>
+              <circle cx="112" cy="110" r="7" fill="#15803D"/>
+              <circle cx="140" cy="105" r="10" fill="#FDBA74"/>
+
+              <!-- 頭部：女孩斜劉海、粉紅髮圈雙馬尾隨風揚起 -->
+              <g transform="translate(10, 0)">
+                <!-- 雙馬尾：隨拔河後仰向後揚起 (左右雙馬尾) -->
+                <!-- 內側馬尾 -->
+                <path d="M 48 36 C 24 24, 8 36, 12 56 C 28 60, 42 46, 48 42 Z" fill="#78350F"/>
+                <circle cx="48" cy="38" r="6" fill="#F43F5E"/>
+                
+                <!-- 臉蛋 -->
+                <circle cx="78" cy="52" r="32" fill="#FED7AA"/>
+                
+                <!-- 外側主馬尾 -->
+                <path d="M 42 45 C 16 38, -2 55, 6 76 C 24 74, 38 60, 44 52 Z" fill="#78350F"/>
+                <circle cx="42" cy="50" r="7" fill="#FB7185"/>
+
+                <!-- 棕色齊劉海與頭頂頭髮 -->
+                <path d="M 52 46 C 54 22, 88 16, 104 36 C 96 36, 92 48, 86 50 C 76 50, 72 45, 64 48 C 58 50, 54 54, 52 56 Z" fill="#78350F"/>
+                <circle cx="56" cy="58" r="7" fill="#FDBA74"/>
+                
+                <!-- 女孩發力專注目光與吶喊嘴型 -->
+                <path d="M 76 38 L 92 44" stroke="#451A03" stroke-width="4" stroke-linecap="round"/>
+                <ellipse cx="88" cy="48" rx="4.5" ry="6" fill="#18181B"/>
+                <ellipse cx="80" cy="60" rx="7" ry="4" fill="#FB7185" opacity="0.6"/>
+                <path d="M 86 63 Q 98 63 94 74 Q 85 74 86 63 Z" fill="#991B1B"/>
+                <rect x="88" y="64" width="6" height="3" fill="#FFFFFF" rx="1"/>
+              </g>
+            </svg>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="status-badge" id="statusBadge">勢均力敵！加油！(0/5)</div>
+    </div>
+
+    <!-- 右側：紅隊區域（雙馬尾女孩大力士） -->
+    <div class="player-zone zone-red">
+      <div class="player-title">👧 紅隊（小美）</div>
+      <div class="q-box" id="redQ">--</div>
+      <div class="options-grid" id="redOptions">
+        <div class="ready-banner">等待開局哨聲 🔔</div>
+      </div>
+      <div style="font-weight:800; font-size:1.15rem; color:#DC2626;">紅隊拉進：<span id="redLead">0</span> 格</div>
+    </div>
+  </div>
+
+  <!-- 倒數 3、2、1 動畫層 -->
+  <div id="countdownLayer" class="countdown-overlay hidden">
+    <div class="countdown-num" id="countdownText">3</div>
+    <div class="countdown-tip" id="countdownSubText">選手各就各位！🪢</div>
+  </div>
+
+  <!-- 段落設定彈窗 -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2 style="margin:0 0 8px;">選擇拔河乘法段落</h2>
+      <p style="color:#64748B; margin:0 0 12px;">點選本場對決要練習的段落：</p>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:16px 0;" id="factorGrid"></div>
+      <button class="btn-action" onclick="closeSettings()">確定並開始對決！🚀</button>
+    </div>
+  </div>
+
+  <!-- 勝負結算彈窗 -->
+  <div id="winModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div id="winEmoji" style="font-size: 5rem;">🏆</div>
+      <h1 id="winTitle" style="margin: 8px 0; font-size: 2.2rem;">藍隊獲勝！</h1>
+      <p style="color: #64748B; font-size: 1.2rem;">好棒的乘法心算力！成功拉過勝負標記線！</p>
+      <button class="btn-action" onclick="restartMatch()">再來一局 🪢</button>
+    </div>
+  </div>
+
+  <script>
+    const WIN_GOAL = 5;       // 贏 5 格獲勝
+    const STEP_PX = 32;       // 每贏一次移動 32px
+    let ropeScore = 0;        // -5 (藍勝) ~ +5 (紅勝)
+    let currentAns = 0;
+    let isRoundLocked = true; // 預設鎖定，倒數結束哨響後才解鎖
+    let isGameRunning = false;
+    let selectedFactors = new Set([3, 6, 7, 9]);
+
+    // Web Audio 音效產生器（免外部音檔，秒開不延遲）
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type = 'sine', duration = 0.12, vol = 0.3) {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // 倒數 3, 2, 1 滴答提示音
+    function soundCountdownPip() {
+      playSound(784, 'triangle', 0.15, 0.4); // G5 響亮短音
+    }
+
+    // 裁判開賽哨聲 (雙頻調頻模擬金屬裁判哨)
+    function soundWhistle() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+
+        // 主哨音 (高音震盪)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(2600, now);
+        osc1.frequency.linearRampToValueAtTime(3200, now + 0.1);
+        osc1.frequency.linearRampToValueAtTime(2800, now + 0.45);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.5);
+
+        // 次音副頻 (產生哨子共振顆粒感)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(2850, now);
+        osc2.frequency.linearRampToValueAtTime(3450, now + 0.1);
+        osc2.frequency.linearRampToValueAtTime(3000, now + 0.45);
+        gain2.gain.setValueAtTime(0.3, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now);
+        osc2.stop(now + 0.5);
+      } catch (e) {}
+    }
+
+    function soundPullSuccess() {
+      playSound(350, 'triangle', 0.1);
+      setTimeout(() => playSound(520, 'triangle', 0.15), 60);
+      setTimeout(() => playSound(700, 'sine', 0.25), 140);
+    }
+    function soundWrong() {
+      playSound(160, 'sawtooth', 0.28);
+    }
+    function soundVictory() {
+      playSound(523.25, 'sine', 0.15);
+      setTimeout(() => playSound(659.25, 'sine', 0.15), 120);
+      setTimeout(() => playSound(783.99, 'sine', 0.35), 240);
+    }
+
+    // 初始化地面刻度
+    function initScale() {
+      const box = document.getElementById('scaleTicks');
+      box.innerHTML = '';
+      for (let i = -WIN_GOAL; i <= WIN_GOAL; i++) {
+        const tick = document.createElement('div');
+        tick.className = 'tick';
+        if (i === 0) tick.classList.add('center');
+        if (i === -WIN_GOAL || i === WIN_GOAL) tick.classList.add('win');
+        box.appendChild(tick);
+      }
+    }
+
+    // 倒數 3、2、1 與哨聲流程
+    function startCountdownSequence() {
+      isGameRunning = false;
+      isRoundLocked = true;
+
+      // 清除未開始前的題目
+      document.getElementById('blueQ').textContent = 'READY';
+      document.getElementById('redQ').textContent = 'READY';
+      document.getElementById('blueOptions').innerHTML = '<div class="ready-banner">倒數計時中 ⏳</div>';
+      document.getElementById('redOptions').innerHTML = '<div class="ready-banner">倒數計時中 ⏳</div>';
+
+      const overlay = document.getElementById('countdownLayer');
+      const textElem = document.getElementById('countdownText');
+      const subElem = document.getElementById('countdownSubText');
+      overlay.classList.remove('hidden');
+
+      let count = 3;
+
+      function renderStep() {
+        if (count > 0) {
+          textElem.textContent = count;
+          textElem.style.color = '#FACC15';
+          subElem.textContent = count === 3 ? '選手各就各位！🪢' : (count === 2 ? '雙手抓緊繩子！🔥' : '預備……準備搶答！⚡️');
+          
+          // 重新觸發放大動畫
+          textElem.style.animation = 'none';
+          textElem.offsetHeight; // reflow
+          textElem.style.animation = 'countPulse 0.85s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards';
+
+          soundCountdownPip();
+          count--;
+          setTimeout(renderStep, 950);
+        } else {
+          // 嗶！開始哨聲
+          textElem.textContent = 'GO!';
+          textElem.style.color = '#4ADE80';
+          subElem.textContent = '開拔！全力搶答！🚀';
+          textElem.style.animation = 'none';
+          textElem.offsetHeight;
+          textElem.style.animation = 'countPulse 0.85s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards';
+
+          soundWhistle();
+
+          setTimeout(() => {
+            overlay.classList.add('hidden');
+            isGameRunning = true;
+            generateQuestion(); // 正式出現題目與按鈕
+          }, 650);
+        }
+      }
+
+      renderStep();
+    }
+
+    // 題目生成：左右題目相同，選項隨機排列
+    function generateQuestion() {
+      if (!isGameRunning) return;
+      isRoundLocked = false;
+      const active = Array.from(selectedFactors);
+      const a = active[Math.floor(Math.random() * active.length)];
+      const b = Math.floor(Math.random() * 9) + 1;
+      currentAns = a * b;
+
+      document.getElementById('blueQ').textContent = `${a} × ${b}`;
+      document.getElementById('redQ').textContent = `${a} × ${b}`;
+
+      const set = new Set([currentAns]);
+      if (b > 1) set.add(a * (b - 1));
+      if (b < 9) set.add(a * (b + 1));
+
+      while (set.size < 4) {
+        const ra = active[Math.floor(Math.random() * active.length)];
+        const rb = Math.floor(Math.random() * 9) + 1;
+        set.add(ra * rb);
+      }
+
+      const optsBlue = Array.from(set).sort(() => Math.random() - 0.5);
+      const optsRed = Array.from(set).sort(() => Math.random() - 0.5);
+
+      renderPlayerOpts('blueOptions', optsBlue, 'blue');
+      renderPlayerOpts('redOptions', optsRed, 'red');
+    }
+    function renderPlayerOpts(boxId, options, player) {
+      const box = document.getElementById(boxId);
+      box.innerHTML = '';
+      options.forEach(num => {
+        const btn = document.createElement('div');
+        btn.className = 'opt-btn';
+        btn.textContent = num;
+        btn.onpointerdown = () => handleAnswer(player, num, btn);
+        box.appendChild(btn);
+      });
+    }
+
+    // 搶答判定與動態發力演出
+    function handleAnswer(player, num, btn) {
+      if (isRoundLocked || !isGameRunning) return;
+
+      if (num === currentAns) {
+        isRoundLocked = true;
+        btn.classList.add('correct');
+        soundPullSuccess();
+
+        const charBoy = document.getElementById('charBoy');
+        const charGirl = document.getElementById('charGirl');
+        const bubbleBoy = document.getElementById('bubbleBoy');
+        const bubbleGirl = document.getElementById('bubbleGirl');
+        const ropeMesh = document.getElementById('ropeMesh');
+
+        // 繩索受力顫動
+        ropeMesh.classList.add('shaking');
+        setTimeout(() => ropeMesh.classList.remove('shaking'), 300);
+
+        if (player === 'blue') {
+          ropeScore--;
+          // 藍隊小智發力後仰，紅隊小美被扯向前撲倒
+          charBoy.classList.add('pulling');
+          charGirl.classList.add('slipping');
+          bubbleBoy.textContent = '🔥💪';
+          bubbleGirl.textContent = '💦😱';
+        } else {
+          ropeScore++;
+          // 紅隊小美發力後仰，藍隊小智被扯向前撲倒
+          charGirl.classList.add('pulling');
+          charBoy.classList.add('slipping');
+          bubbleGirl.textContent = '🔥💪';
+          bubbleBoy.textContent = '💦😱';
+        }
+
+        updateRopeVisual();
+
+        // 動畫維持 650 毫秒後回正或進入勝負結算
+        setTimeout(() => {
+          charBoy.classList.remove('pulling', 'slipping');
+          charGirl.classList.remove('pulling', 'slipping');
+
+          if (ropeScore <= -WIN_GOAL) {
+            triggerVictory('blue');
+          } else if (ropeScore >= WIN_GOAL) {
+            triggerVictory('red');
+          } else {
+            generateQuestion();
+          }
+        }, 650);
+
+      } else {
+        // 點錯懲罰：凍結該按鈕防連點
+        soundWrong();
+        btn.classList.add('wrong', 'locked');
+      }
+    }
+
+    // 更新拔河台位移與數據
+    function updateRopeVisual() {
+      const rig = document.getElementById('battleRig');
+      const shiftX = ropeScore * STEP_PX;
+      rig.style.transform = `translateX(calc(-50% + ${shiftX}px))`;
+
+      const blueLead = ropeScore < 0 ? Math.abs(ropeScore) : 0;
+      const redLead = ropeScore > 0 ? ropeScore : 0;
+      document.getElementById('blueLead').textContent = blueLead;
+      document.getElementById('redLead').textContent = redLead;
+
+      const badge = document.getElementById('statusBadge');
+      if (ropeScore === 0) {
+        badge.textContent = '勢均力敵！加油！(0/5)';
+        badge.style.color = '#334155';
+      } else if (ropeScore < 0) {
+        badge.textContent = `🔵 小智猛力拉進了 ${Math.abs(ropeScore)} 格！`;
+        badge.style.color = 'var(--blue)';
+      } else {
+        badge.textContent = `🔴 小美猛力拉進了 ${ropeScore} 格！`;
+        badge.style.color = 'var(--red)';
+      }
+    }
+
+    // 勝利演出
+    function triggerVictory(winner) {
+      isGameRunning = false;
+      isRoundLocked = true;
+      soundVictory();
+      const charBoy = document.getElementById('charBoy');
+      const charGirl = document.getElementById('charGirl');
+      const modal = document.getElementById('winModal');
+      const title = document.getElementById('winTitle');
+      const emoji = document.getElementById('winEmoji');
+
+      if (winner === 'blue') {
+        charBoy.classList.add('winning');
+        emoji.textContent = '👦 🏆 🔵';
+        title.textContent = '藍隊（小智）拔河獲勝！';
+        title.style.color = 'var(--blue)';
+      } else {
+        charGirl.classList.add('winning');
+        emoji.textContent = '👧 🏆 🔴';
+        title.textContent = '紅隊（小美）拔河獲勝！';
+        title.style.color = 'var(--red)';
+      }
+
+      setTimeout(() => {
+        modal.classList.remove('hidden');
+      }, 500);
+    }
+
+    function restartMatch() {
+      ropeScore = 0;
+      document.getElementById('charBoy').classList.remove('winning', 'pulling', 'slipping');
+      document.getElementById('charGirl').classList.remove('winning', 'pulling', 'slipping');
+      updateRopeVisual();
+      document.getElementById('winModal').classList.add('hidden');
+      startCountdownSequence();
+    }
+
+    // 設定功能
+    function openSettings() {
+      const grid = document.getElementById('factorGrid');
+      grid.innerHTML = '';
+      for (let i = 2; i <= 9; i++) {
+        const btn = document.createElement('div');
+        btn.style.cssText = 'padding:12px; font-size:1.6rem; font-weight:800; border:2px solid #CBD5E1; border-radius:12px; cursor:pointer; text-align:center;';
+        if (selectedFactors.has(i)) {
+          btn.style.background = '#DCFCE7';
+          btn.style.borderColor = '#16A34A';
+        }
+        btn.textContent = i;
+        btn.onclick = () => {
+          if (selectedFactors.has(i)) {
+            if (selectedFactors.size > 1) selectedFactors.delete(i);
+          } else {
+            selectedFactors.add(i);
+          }
+          openSettings();
+        };
+        grid.appendChild(btn);
+      }
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+      restartMatch();
+    }
+
+    // 初始載入：刻度準備，進入開局倒數流程
+    initScale();
+    // 進入時提供「點擊開局」或直接自動倒數
+    setTimeout(() => {
+      startCountdownSequence();
+    }, 300);
+  </script>
+</body>
+</html>
