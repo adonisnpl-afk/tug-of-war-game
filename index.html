@@ -483,6 +483,7 @@
   <header>
     <div>🪢 乘法拔河大對決（二年級競技版）</div>
     <div style="display:flex; gap:8px;">
+      <button class="header-btn" id="bgmToggleBtn" onclick="toggleBgm()">🎵 音樂: 開</button>
       <button class="header-btn" onclick="openSettings()">⚙️ 選擇段落</button>
       <button class="header-btn" onclick="restartMatch()">🔄 重新開局</button>
     </div>
@@ -692,6 +693,115 @@
 
     // Web Audio 音效產生器（免外部音檔，秒開不延遲）
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let bgmEnabled = true;
+    let bgmTimer = null;
+    let bgmStep = 0;
+    let bgmBpm = 135; // 基礎節奏速度 (BPM)
+
+    // BGM 控制開關
+    function toggleBgm() {
+      bgmEnabled = !bgmEnabled;
+      const btn = document.getElementById('bgmToggleBtn');
+      btn.textContent = bgmEnabled ? '🎵 音樂: 開' : '🔇 音樂: 關';
+      if (!bgmEnabled) {
+        stopBgm();
+      } else if (isGameRunning) {
+        startBgm();
+      }
+    }
+
+    // 合成重低音大鼓 (Kick Drum)
+    function playBgmKick(time) {
+      if (!bgmEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(140, time);
+        osc.frequency.exponentialRampToValueAtTime(35, time + 0.12);
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(time);
+        osc.stop(time + 0.12);
+      } catch (e) {}
+    }
+
+    // 合成緊湊高音閉合鈸 (Hi-Hat)
+    function playBgmHiHat(time) {
+      if (!bgmEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(8000, time);
+        gain.gain.setValueAtTime(0.04, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(time);
+        osc.stop(time + 0.04);
+      } catch (e) {}
+    }
+
+    // 合成 8-bit 緊張戰鬥 Bass 音符
+    function playBgmBass(freq, time, dur = 0.12) {
+      if (!bgmEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, time);
+        gain.gain.setValueAtTime(0.12, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(time);
+        osc.stop(time + dur);
+      } catch (e) {}
+    }
+
+    // 緊張戰鬥 BGM 旋律音階 (A 小調緊張推進音)
+    const BASS_NOTES = [110, 110, 130.81, 110, 146.83, 110, 164.81, 146.83]; // A2, A2, C3, A2, D3, A2, E3, D3
+
+    function bgmTick() {
+      if (!isGameRunning || !bgmEnabled) return;
+      const now = audioCtx.currentTime;
+      
+      // 每 4 拍下一個重低音大鼓
+      if (bgmStep % 2 === 0) {
+        playBgmKick(now);
+      }
+      playBgmHiHat(now);
+
+      // 低音旋律前進
+      const noteFreq = BASS_NOTES[bgmStep % BASS_NOTES.length];
+      playBgmBass(noteFreq, now, 0.1);
+
+      bgmStep++;
+
+      // 戰況越接近勝負點，速度加快營造極致緊張感
+      const tension = Math.abs(ropeScore);
+      bgmBpm = tension >= 3 ? 165 : 135;
+
+      const intervalMs = (60 / bgmBpm / 2) * 1000;
+      bgmTimer = setTimeout(bgmTick, intervalMs);
+    }
+
+    function startBgm() {
+      stopBgm();
+      if (!bgmEnabled) return;
+      bgmStep = 0;
+      bgmTick();
+    }
+
+    function stopBgm() {
+      if (bgmTimer) {
+        clearTimeout(bgmTimer);
+        bgmTimer = null;
+      }
+    }
+
     function playSound(freq, type = 'sine', duration = 0.12, vol = 0.3) {
       try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -780,6 +890,7 @@
 
     // 倒數 3、2、1 與哨聲流程
     function startCountdownSequence() {
+      stopBgm();
       isGameRunning = false;
       isRoundLocked = true;
 
@@ -825,6 +936,7 @@
             overlay.classList.add('hidden');
             isGameRunning = true;
             generateQuestion(); // 正式出現題目與按鈕
+            startBgm();         // 哨響結束瞬間，緊張背景音樂正式切入
           }, 650);
         }
       }
@@ -956,6 +1068,7 @@
 
     // 勝利演出
     function triggerVictory(winner) {
+      stopBgm();
       isGameRunning = false;
       isRoundLocked = true;
       soundVictory();
@@ -983,6 +1096,7 @@
     }
 
     function restartMatch() {
+      stopBgm();
       ropeScore = 0;
       document.getElementById('charBoy').classList.remove('winning', 'pulling', 'slipping');
       document.getElementById('charGirl').classList.remove('winning', 'pulling', 'slipping');
